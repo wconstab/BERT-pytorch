@@ -6,10 +6,21 @@ from .model import BERT
 from .trainer import BERTTrainer
 from .dataset import BERTDataset, WordVocab
 
+import random
+import torch
+import numpy as np
 
 def train():
+    # Make all randomness deterministic
+    random.seed(1337)
+    torch.manual_seed(1337)
+    np.random.seed(1337)
+    torch.backends.cudnn.deterministic = True
+    torch.backends.cudnn.benchmark = False
+
     parser = argparse.ArgumentParser()
 
+    parser.add_argument("-d", "--debug", required=False, type=str, default=None)
     parser.add_argument("-c", "--train_dataset", required=True, type=str, help="train dataset for train bert")
     parser.add_argument("-t", "--test_dataset", type=str, default=None, help="test set for evaluate train set")
     parser.add_argument("-v", "--vocab_path", required=True, type=str, help="built vocab model path with bert-vocab")
@@ -60,7 +71,7 @@ def train():
     print("Creating BERT Trainer")
     trainer = BERTTrainer(bert, len(vocab), train_dataloader=train_data_loader, test_dataloader=test_data_loader,
                           lr=args.lr, betas=(args.adam_beta1, args.adam_beta2), weight_decay=args.adam_weight_decay,
-                          with_cuda=args.with_cuda, cuda_devices=args.cuda_devices, log_freq=args.log_freq)
+                          with_cuda=args.with_cuda, cuda_devices=args.cuda_devices, log_freq=args.log_freq, debug=args.debug)
 
     print("Training Start")
     for epoch in range(args.epochs):
