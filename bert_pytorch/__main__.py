@@ -20,6 +20,7 @@ def train():
 
     parser = argparse.ArgumentParser()
 
+    parser.add_argument("--script", required=False, action="store_true")
     parser.add_argument("-d", "--debug", required=False, type=str, default=None)
     parser.add_argument("-c", "--train_dataset", required=True, type=str, help="train dataset for train bert")
     parser.add_argument("-t", "--test_dataset", type=str, default=None, help="test set for evaluate train set")
@@ -67,6 +68,10 @@ def train():
 
     print("Building BERT model")
     bert = BERT(len(vocab), hidden=args.hidden, n_layers=args.layers, attn_heads=args.attn_heads)
+
+    if args.script:
+        print("Scripting BERT model")
+        bert = torch.jit.script(bert)
 
     print("Creating BERT Trainer")
     trainer = BERTTrainer(bert, len(vocab), train_dataloader=train_data_loader, test_dataloader=test_data_loader,

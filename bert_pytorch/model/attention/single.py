@@ -3,14 +3,15 @@ import torch.nn.functional as F
 import torch
 
 import math
-
+from ..utils.tensor2tensor import TensorToTensor
+from typing import Optional
 
 class Attention(nn.Module):
     """
     Compute 'Scaled Dot Product Attention
     """
 
-    def forward(self, query, key, value, mask=None, dropout=None):
+    def forward(self, query, key, value, dropout: TensorToTensor, mask: Optional[torch.Tensor]=None):
         scores = torch.matmul(query, key.transpose(-2, -1)) \
                  / math.sqrt(query.size(-1))
 
@@ -19,7 +20,6 @@ class Attention(nn.Module):
 
         p_attn = F.softmax(scores, dim=-1)
 
-        if dropout is not None:
-            p_attn = dropout(p_attn)
+        p_attn = dropout.forward(p_attn)
 
         return torch.matmul(p_attn, value), p_attn
