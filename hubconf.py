@@ -28,7 +28,7 @@ class Model:
     def __init__(self, device=None, jit=False):
         self.device = device
         self.jit = jit
-
+        self.trainer = self.get_module()
 
     def get_module(self):
         args = parse_args(args=[
@@ -65,15 +65,42 @@ class Model:
 
     @skipIfNotImplemented
     def eval(self, niter=1):
-        m, _ = self.get_module()
+        trainer = self.trainer
+        data = trainer.train_data_loader[0]
         for _ in range(niter):
-            m.test(epoch=0)
+            data = {key: value.to(trainer.device) for key, value in data.items()}
+
+            # 1. forward the next_sentence_prediction and masked_lm model
+            next_sent_output, mask_lm_output = trainer.model.forward(data["bert_input"], data["segment_label"])
+
+            # 2-1. NLL(negative log likelihood) loss of is_next classification result
+            # 2-2. NLLLoss of predicting masked token word
+            # 2-3. Adding next_loss and mask_loss : 3.4 Pre-training Procedure
+            next_loss = trainer.criterion(next_sent_output, data["is_next"])
+            mask_loss = trainer.criterion(mask_lm_output.transpose(1, 2), data["bert_label"])
+            loss = next_loss + mask_loss
 
     @skipIfNotImplemented
     def train(self, niter=1):
-        m, _ = self.get_module()
+        trainer = self.trainer
+        data = trainer.train_data_loader[0]
         for _ in range(niter):
-            m.train(epoch=0)
+            data = {key: value.to(trainer.device) for key, value in data.items()}
+
+            # 1. forward the next_sentence_prediction and masked_lm model
+            next_sent_output, mask_lm_output = trainer.model.forward(data["bert_input"], data["segment_label"])
+
+            # 2-1. NLL(negative log likelihood) loss of is_next classification result
+            # 2-2. NLLLoss of predicting masked token word
+            # 2-3. Adding next_loss and mask_loss : 3.4 Pre-training Procedure
+            next_loss = trainer.criterion(next_sent_output, data["is_next"])
+            mask_loss = trainer.criterion(mask_lm_output.transpose(1, 2), data["bert_label"])
+            loss = next_loss + mask_loss
+
+            # 3. backward and optimization only in train
+            trainer.optim_schedule.zero_grad()
+            loss.backward()
+            trainer.optim_schedule.step_and_update_lr()
 
 
 if __name__ == '__main__':
