@@ -58,15 +58,14 @@ class Model:
             print("Scripting BERT model")
             bert = torch.jit.script(bert)
 
-        trainer = BERTTrainer(bert, len(vocab), train_dataloader=train_data_loader, test_dataloader=test_data_loader,
+        return BERTTrainer(bert, len(vocab), train_dataloader=train_data_loader, test_dataloader=test_data_loader,
                             lr=args.lr, betas=(args.adam_beta1, args.adam_beta2), weight_decay=args.adam_weight_decay,
                             with_cuda=args.with_cuda, cuda_devices=args.cuda_devices, log_freq=args.log_freq, debug=args.debug)
-        return trainer, None
 
     @skipIfNotImplemented
     def eval(self, niter=1):
         trainer = self.trainer
-        data = trainer.train_data_loader[0]
+        data = trainer.test_data[0]
         for _ in range(niter):
             data = {key: value.to(trainer.device) for key, value in data.items()}
 
@@ -83,7 +82,7 @@ class Model:
     @skipIfNotImplemented
     def train(self, niter=1):
         trainer = self.trainer
-        data = trainer.train_data_loader[0]
+        data = trainer.train_data[0]
         for _ in range(niter):
             data = {key: value.to(trainer.device) for key, value in data.items()}
 
