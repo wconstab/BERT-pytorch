@@ -16,14 +16,6 @@ np.random.seed(1337)
 torch.backends.cudnn.deterministic = True
 torch.backends.cudnn.benchmark = False
 
-def skipIfNotImplemented(func):
-    def wrapper(*args, **kwargs):
-        try:
-            func(*args, **kwargs)
-        except NotImplementedError:
-            print('skipped since {} is not implemented'.format(func.__name__))
-    return wrapper
-
 class Model:
     def __init__(self, device=None, jit=False):
         self.device = device
@@ -67,7 +59,6 @@ class Model:
     def get_module(self):
         return self.trainer.model, self.example_inputs
 
-    @skipIfNotImplemented
     def eval(self, niter=1):
         trainer = self.trainer
         _, data = next(enumerate(trainer.test_data))
@@ -84,7 +75,6 @@ class Model:
             mask_loss = trainer.criterion(mask_lm_output.transpose(1, 2), data["bert_label"])
             loss = next_loss + mask_loss
 
-    @skipIfNotImplemented
     def train(self, niter=1):
         trainer = self.trainer
         _, data = next(enumerate(trainer.train_data))
