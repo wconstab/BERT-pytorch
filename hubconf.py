@@ -98,11 +98,16 @@ class Model:
 
 
 if __name__ == '__main__':
-    for device in ['cpu', 'cuda']:
-        for jit in [True, False]:
+    for device in ['cuda']:
+        for jit in [False]:
             print("Testing device {}, JIT {}".format(device, jit))
             m = Model(device=device, jit=jit)
             bert, example_inputs = m.get_module()
             bert(*example_inputs)
             m.train()
-            m.eval()
+            with torch.autograd.profiler.emit_nvtx() as prof:
+                with torch.autograd.profiler.record_function("whc_train"):
+                    m.train()
+
+                with torch.autograd.profiler.record_function("whc_eval"):
+                    m.eval()
